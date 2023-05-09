@@ -21,7 +21,22 @@ public class BusinessController : ControllerBase
         try
         {
             var empresas = await Contexto.business.ToListAsync() ;
-            return Ok("Hola Lucas Manco. No,no falla");
+            return Ok(empresas);
+        }
+        catch(Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("AltaBusiness")]
+    public async Task<IActionResult> AltaBusiness([FromForm]Business empresas)
+    {
+        try
+        {
+            await Contexto.AddAsync(empresas);
+            Contexto.SaveChanges();
+            return CreatedAtAction(nameof(Get),new {id = empresas.IdBusiness},empresas);
         }
         catch(Exception ex)
         {
