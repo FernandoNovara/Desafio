@@ -63,7 +63,7 @@
 
     **Para el Service 2:**
     ```
-    GET /api/registers?dateFrom=2023-05-01&dateTo=2023-05-10&descriptionFilter=apellido&businessLocation=Argentina`
+    GET /api/registers?dateFrom=2023-05-01&dateTo=2023-05-10&descriptionFilter=apellido&businessLocation=Argentina
     ```
 
     <br>
