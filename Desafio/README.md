@@ -1,4 +1,5 @@
 #Desafío Técnico BeClever
+
 ###Instalación
  1. **Clonar el repositorio de GitHub:**
 
@@ -12,7 +13,8 @@
 2. **Configurar la base de datos:**
     
     Importa el script de base de datos MySQL proporcionado en el repositorio para crear la estructura de tablas necesarias.<br>
-    ![Diagrama EER](clever_business.png)
+    Diagrama ER:
+    ![Diagrama ER](clever_business.png)
 
     <br>
 
