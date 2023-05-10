@@ -1,6 +1,6 @@
-#Desafío Técnico BeClever
+# Desafío Técnico BeClever
 
-###Instalación
+### Instalación
  1. **Clonar el repositorio de GitHub:**
 
     Abre tu terminal o línea de comandos.
