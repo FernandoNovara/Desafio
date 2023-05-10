@@ -15,31 +15,19 @@ public class RegisterController : ControllerBase
         this.Contexto = context;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<Register>> Get()
-    {
-        try
-        {
-            var registro = await Contexto.register.ToListAsync() ;
-            return Ok(registro);
-        }
-        catch(Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
-
-
     [HttpPost("Register")]
     public async Task<IActionResult> Register([FromForm] Register registro)
     {
         try
         {
-            if (registro != null)
+            if (registro != null)//reviso que el parametro que me paso no este vacio
             {
+                //Obtengo el ultimo registro del personal
                 var res = await Contexto.register.OrderByDescending(x => x.Date).FirstOrDefaultAsync(x => x.IdEmployee == registro.IdEmployee);
+                //Reviso si tiene un registro, si no tiene paso a crearle uno
                 if (res == null)
                 {
+                    //reviso que el registro sea de Ingreso
                     if (registro.RegisterType.Equals("Ingreso"))
                     {
                         registro.Date = DateTime.Now;
@@ -50,12 +38,21 @@ public class RegisterController : ControllerBase
                     }
                     else
                     {
+                        // de lo contrario marca un mensaje de error
                         return BadRequest("El tipo de registro no puede puede ser egreso.");
                     }
                 }
+                //Reviso que el registerType no sea iguales
                 if (!registro.RegisterType.Equals(res.RegisterType))
                 {
+                    //Agrego la fecha y hora del sistema
                     registro.Date = DateTime.Now;
+
+                    //Agrego a registro la informacion de business y employee
+                    registro.business = res.business;
+                    registro.employee = res.employee;
+
+                    //Guardo en la base de datos
                     await Contexto.AddAsync(registro);
                     await Contexto.SaveChangesAsync();
 
@@ -63,6 +60,7 @@ public class RegisterController : ControllerBase
                 }
                 else
                 {
+                    //Reviso que tipo de ingreso fue el que ocaciono el problema y envio un mensaje acorde
                     if (registro.RegisterType.Equals("Ingreso"))
                     {
                         return BadRequest("No marco un egreso");
@@ -75,6 +73,7 @@ public class RegisterController : ControllerBase
             }
             else
             {
+                //muestro un mensaje de error si me trata de enviar un mensaje de error
                 return BadRequest("No se puede cargar una registro nulo.");
             }
         }
@@ -89,10 +88,13 @@ public class RegisterController : ControllerBase
     public async Task<ActionResult<Register>> Search ([FromForm] String dateFrom,[FromForm] String dateTo,[FromForm] String? descriptionFilter,[FromForm] String? businessLocation)
     {
         List<Register> res;
+        //reviso si descriptionFilter es nulo
         if(!String.IsNullOrEmpty(descriptionFilter))
         {
+            //reviso si businessLocation es nulo
             if(!String.IsNullOrEmpty(businessLocation))
             {
+                //Si no es nulo, entonces procedo a consultar con los datos de filtrado
                 res = await Contexto.register
                 .Include(e => e.employee)
                 .Include(b => b.business)
@@ -101,6 +103,7 @@ public class RegisterController : ControllerBase
                         && (x.business.Location.Equals(businessLocation)))
                 .ToListAsync();
             }
+            //si businessLocation es nulo, entonces hago el filtrado solo por el descriptionFilter
             else{
                 res = await Contexto.register
                 .Include(e => e.employee)
@@ -110,6 +113,7 @@ public class RegisterController : ControllerBase
                 .ToListAsync();
             }
         }
+        //si no tengo filto, hago una consulta general
         else{
                 res = await Contexto.register
                 .Include(e => e.employee)
@@ -129,6 +133,7 @@ public class RegisterController : ControllerBase
             // Obtengo las sucursales en la base
             var sucursales = Contexto.business.ToList();
 
+            // Obtengo todos los registros de la base de datos por empresas
             var registrosPorSucursales = Contexto.register
                     .GroupBy(r => new { r.business.Location})
                     .Select(g => new
@@ -138,10 +143,10 @@ public class RegisterController : ControllerBase
                     })
                     .ToList();
 
-            // Obtengo todos los registros de la base de datos en el tiempo 
+            // Obtengo todos los registros de la base de datos en el tiempo,sucursal y genero
             var registros = Contexto.register
                     .Where(r => r.Date >= DateTime.Parse(dateFrom) && r.Date <= DateTime.Parse(dateTo))
-                    .GroupBy(r => new { r.business.Location, r.employee.Genero}) // Agrupar por ubicación de la sucursal
+                    .GroupBy(r => new { r.business.Location, r.employee.Genero}) // Agrupar por ubicación de la sucursal y genero
                     .Select(g => new
                     {
                         Sucursal = g.Key.Location,
@@ -150,11 +155,12 @@ public class RegisterController : ControllerBase
                     })
                     .ToList();
 
+            //Obtengo el promedio haciendo una consulta seleccionando la sucursal y obteniendo atraves de una operacion matetica el promedio
             var promedios = sucursales.Select(s => new
             {
                 Sucursal = s.Location,
-                PromedioMasculino = ((decimal)registros.FirstOrDefault(r => r.Genero == "Masculino").Cantidad / registrosPorSucursales.FirstOrDefault(r => r.Sucursal == s.Location).Cantidad).ToString("0.00"),
-                PromedioFemenino = ((decimal)registros.FirstOrDefault(r => r.Genero == "Femenino").Cantidad / registrosPorSucursales.FirstOrDefault(r => r.Sucursal == s.Location).Cantidad).ToString("0.00")
+                Promedio_Masculino = ((decimal)registros.FirstOrDefault(r => r.Genero == "Masculino").Cantidad / registrosPorSucursales.FirstOrDefault(r => r.Sucursal == s.Location).Cantidad).ToString("0.00"),
+                Promedio_Femenino = ((decimal)registros.FirstOrDefault(r => r.Genero == "Femenino").Cantidad / registrosPorSucursales.FirstOrDefault(r => r.Sucursal == s.Location).Cantidad).ToString("0.00")
             }).ToList();
 
         return Ok(promedios);

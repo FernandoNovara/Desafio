@@ -10,11 +10,11 @@ namespace Desafio{
         public int IdEmployee {get;set;}
 
         [ForeignKey(nameof(IdEmployee))]
-        public Employee employee {get;set;}
+        public Employee? employee {get;set;}
         public int IdBusiness {get;set;}
         
         [ForeignKey(nameof(IdBusiness))]
-        public Business business {get;set;}
+        public Business? business {get;set;}
         public DateTime? Date {get;set;}
         public String? RegisterType {get;set;}
     }
