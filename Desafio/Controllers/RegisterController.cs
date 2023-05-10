@@ -84,10 +84,6 @@ public class RegisterController : ControllerBase
         }
     }
 
-//      Generar un servicio el cual liste la cantidad de ingresos y egresos dada una fecha
-//      desde – hasta, que se pueda filtrar por nombre o apellido y sucursal.
-//      Function search(dateFrom, dateTo , descriptionFilter,
-//      businessLocation)
 
     [HttpGet("Search")]
     public async Task<ActionResult<Register>> Search ([FromForm] String dateFrom,[FromForm] String dateTo,[FromForm] String? descriptionFilter,[FromForm] String? businessLocation)
@@ -123,5 +119,49 @@ public class RegisterController : ControllerBase
         }
 
         return Ok(res);
+    }
+
+    [HttpGet("Average")]
+    public async Task<IActionResult> Average([FromForm] String dateFrom,[FromForm] String dateTo)
+    {
+        try
+        {
+            // Obtengo las sucursales en la base
+            var sucursales = Contexto.business.ToList();
+
+            var registrosPorSucursales = Contexto.register
+                    .GroupBy(r => new { r.business.Location})
+                    .Select(g => new
+                    {
+                        Sucursal = g.Key.Location,
+                        Cantidad = g.Count()
+                    })
+                    .ToList();
+
+            // Obtengo todos los registros de la base de datos en el tiempo 
+            var registros = Contexto.register
+                    .Where(r => r.Date >= DateTime.Parse(dateFrom) && r.Date <= DateTime.Parse(dateTo))
+                    .GroupBy(r => new { r.business.Location, r.employee.Genero}) // Agrupar por ubicación de la sucursal
+                    .Select(g => new
+                    {
+                        Sucursal = g.Key.Location,
+                        Genero = g.Key.Genero,
+                        Cantidad = g.Count()// Contar el número de registros en cada grupo
+                    })
+                    .ToList();
+
+            var promedios = sucursales.Select(s => new
+            {
+                Sucursal = s.Location,
+                PromedioMasculino = ((decimal)registros.FirstOrDefault(r => r.Genero == "Masculino").Cantidad / registrosPorSucursales.FirstOrDefault(r => r.Sucursal == s.Location).Cantidad).ToString("0.00"),
+                PromedioFemenino = ((decimal)registros.FirstOrDefault(r => r.Genero == "Femenino").Cantidad / registrosPorSucursales.FirstOrDefault(r => r.Sucursal == s.Location).Cantidad).ToString("0.00")
+            }).ToList();
+
+        return Ok(promedios);
+        }
+        catch(Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }
