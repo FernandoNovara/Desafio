@@ -13,7 +13,7 @@
 2. **Configurar la base de datos:**
     
     Importa el script de base de datos MySQL proporcionado en el repositorio para crear la estructura de tablas necesarias.<br>
-    Diagrama ER:
+    Diagrama ER: <br>
     ![Diagrama ER](clever_business.png)
 
     <br>
